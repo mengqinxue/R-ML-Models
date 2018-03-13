@@ -1,0 +1,106 @@
+---
+title: "1. Linear Regression with Gradient Descent"
+output: html_notebook
+---
+
+The notebook explains how to do gradient descent in solving linear regression problems. 
+
+# Generate a sample dataset
+```{r}
+x = seq(from = 1, to = 15, by = 0.2)
+y = 2 * x + 5 + rnorm(length(x), 0, 0.5)     # adding some noise
+
+plot(x, y)
+```
+
+
+# Define a linear model y = wx + b
+```{r}
+LR <- function(x, w, b) {return(w * x + b)}
+```
+
+
+# Define a mean square loss function
+```{r}
+loss <- function(y, pred) {return((y - pred)^2)}
+```
+
+
+# Build a gradient descent function
+<li> r: learning rate </li>
+```{r}
+gradient_descent <- function(w, b, x, y, r){
+  
+  w_grad = 0
+  b_grad = 0
+  
+  for (i in 1:length(x)) {
+    w_grad = w_grad + 2 / length(x) * (y[i] - w * x[i] - b) * (-1) * x[i]
+    b_grad = b_grad + 2 / length(x) * (y[i] - w * x[i] - b) * (-1)
+  }
+  
+  w = w - r * w_grad
+  b = b - r * b_grad
+  
+  return(list(w, b))
+  
+}
+```
+
+
+# Training Setting
+```{r}
+training_epoch = 1000                   # how many rounds to train
+r = 0.01                                # learning rate
+
+hist <- data.frame(w = array(0, dim = training_epoch), 
+                   b = array(0, dim = training_epoch), 
+                   loss = array(0, dim = training_epoch))
+```
+
+
+# Initialization
+```{r}
+w = 0.001
+b = 0.001
+```
+
+
+# Training
+```{r}
+for (i in 1:training_epoch) {
+  
+  param <- gradient_descent(w, b, x, y, r)
+  
+  w = param[[1]]
+  b = param[[2]]
+  
+  hist$w[i] = w
+  hist$b[i] = b
+  hist$loss[i] = mean(loss(y, w*x + b)) / length(x)
+}
+```
+
+
+# Visualization
+```{r}
+library(ggplot2)
+library(grid)
+library(gridExtra)
+
+p1 <- ggplot(hist, aes(x = c(1:training_epoch), y = loss)) +
+      geom_line() + ggtitle("loss") + xlab("epoch")
+
+p2 <- ggplot(hist, aes(x = c(1:training_epoch), y = w)) +
+      geom_line() + ggtitle("w") + xlab("epoch")
+
+p3 <- ggplot(hist, aes(x = c(1:training_epoch), y = b)) +
+      geom_line() + ggtitle("b") + xlab("epoch")
+
+p4 <- ggplot(as.data.frame(cbind(x, y)), aes(x = x, y = y)) + 
+      geom_point() + ggtitle("x") + xlab("y") + 
+      geom_line(aes(x, w*x+b), color = "red")
+
+grid.arrange(p1, p2, p3, p4, ncol = 2, nrow = 2)
+```
+
